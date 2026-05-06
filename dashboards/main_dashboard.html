@@ -1,1 +1,742 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日米バリュー投資ダッシュボード</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .last-update {
+            background: #f0f0f0;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 15px;
+            color: #555;
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .module-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .module-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .module-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .module-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-ready {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-pending {
+            background: #FF9800;
+            color: white;
+        }
+
+        .content-area {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+        }
+
+        .content-area.active {
+            display: block;
+        }
+
+        .back-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: #5568d3;
+        }
+
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .apply-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 24px;
+        }
+
+        .apply-button:hover {
+            background: #45a049;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .results-table th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        .results-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .positive {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .negative {
+            color: #f44336;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 日米バリュー投資ダッシュボード</h1>
+            <p class="subtitle">長期投資・バリュー投資のための総合分析プラットフォーム</p>
+            <div class="last-update" id="lastUpdate">最終更新: 読み込み中...</div>
+        </header>
+
+        <div id="modulesView">
+            <div class="modules-grid">
+                <div class="module-card" onclick="showModule('screening')">
+                    <div class="module-icon">🔍</div>
+                    <h2 class="module-title">バリュー株スクリーニング</h2>
+                    <p class="module-description">
+                        日本・米国の全規模株式から、PER、PBR、ROE、配当利回りなどの指標で割安株を抽出。
+                        毎日自動更新されるデータで投資機会を発見。
+                    </p>
+                    <span class="module-status status-ready">準備完了</span>
+                </div>
+
+                <div class="module-card" onclick="showModule('trends')">
+                    <div class="module-icon">📈</div>
+                    <h2 class="module-title">長期トレンド分析</h2>
+                    <p class="module-description">
+                        過去10年間の財務データ推移を可視化。売上、利益、ROE、配当の安定性を評価し、
+                        持続的成長企業を見極める。
+                    </p>
+                    <span class="module-status status-ready">準備完了</span>
+                </div>
+
+                <div class="module-card" onclick="showModule('dividend')">
+                    <div class="module-icon">💰</div>
+                    <h2 class="module-title">配当再投資シミュレーター</h2>
+                    <p class="module-description">
+                        過去データに基づく配当再投資効果を計算。複利効果を可視化し、
+                        長期保有の威力を数値で確認。
+                    </p>
+                    <span class="module-status status-ready">準備完了</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- スクリーニングモジュール -->
+        <div id="screeningModule" class="content-area">
+            <button class="back-button" onclick="showModules()">← ダッシュボードに戻る</button>
+            <h2>🔍 バリュー株スクリーニング</h2>
+            
+            <div class="filter-section">
+                <h3 style="margin-bottom: 20px;">検索条件設定</h3>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>市場</label>
+                        <select id="marketSelect">
+                            <option value="both">日本・米国両方</option>
+                            <option value="japan">日本のみ</option>
+                            <option value="us">米国のみ</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>時価総額</label>
+                        <select id="marketCapSelect">
+                            <option value="all">全規模</option>
+                            <option value="large">大型株（1兆円以上）</option>
+                            <option value="mid">中型株（1000億〜1兆円）</option>
+                            <option value="small">小型株（1000億円未満）</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-row" style="margin-top: 15px;">
+                    <div class="filter-group">
+                        <label>PER上限</label>
+                        <input type="number" id="perMax" value="15" placeholder="例: 15">
+                    </div>
+                    <div class="filter-group">
+                        <label>PBR上限</label>
+                        <input type="number" id="pbrMax" value="1.5" step="0.1" placeholder="例: 1.5">
+                    </div>
+                    <div class="filter-group">
+                        <label>ROE下限（%）</label>
+                        <input type="number" id="roeMin" value="10" placeholder="例: 10">
+                    </div>
+                    <div class="filter-group">
+                        <label>配当利回り下限（%）</label>
+                        <input type="number" id="divYieldMin" value="2" step="0.1" placeholder="例: 2">
+                    </div>
+                </div>
+                <button class="apply-button" onclick="runScreening()">スクリーニング実行</button>
+            </div>
+
+            <div id="screeningResults">
+                <div class="info-box">
+                    💡 上記の条件を設定して「スクリーニング実行」ボタンをクリックしてください。
+                    デモデータが表示されます（実際のデータ取得には金融APIの接続が必要です）。
+                </div>
+            </div>
+        </div>
+
+        <!-- トレンド分析モジュール -->
+        <div id="trendsModule" class="content-area">
+            <button class="back-button" onclick="showModules()">← ダッシュボードに戻る</button>
+            <h2>📈 長期トレンド分析</h2>
+            
+            <div class="filter-section">
+                <h3 style="margin-bottom: 20px;">銘柄選択</h3>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>ティッカーシンボル / 証券コード</label>
+                        <input type="text" id="tickerInput" placeholder="例: AAPL, 7203 (トヨタ), MSFT">
+                    </div>
+                    <button class="apply-button" onclick="analyzeTrends()">分析開始</button>
+                </div>
+            </div>
+
+            <div id="trendsResults">
+                <div class="info-box">
+                    💡 分析したい銘柄のティッカーシンボル（米国株）または証券コード（日本株）を入力してください。
+                    過去10年間の財務データトレンドが表示されます。
+                </div>
+            </div>
+        </div>
+
+        <!-- 配当再投資モジュール -->
+        <div id="dividendModule" class="content-area">
+            <button class="back-button" onclick="showModules()">← ダッシュボードに戻る</button>
+            <h2>💰 配当再投資シミュレーター</h2>
+            
+            <div class="filter-section">
+                <h3 style="margin-bottom: 20px;">シミュレーション設定</h3>
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>ティッカーシンボル / 証券コード</label>
+                        <input type="text" id="divTickerInput" placeholder="例: KO, 8306 (三菱UFJ)">
+                    </div>
+                    <div class="filter-group">
+                        <label>初期投資額（円）</label>
+                        <input type="number" id="initialInvestment" value="1000000" placeholder="例: 1000000">
+                    </div>
+                </div>
+                <div class="filter-row" style="margin-top: 15px;">
+                    <div class="filter-group">
+                        <label>投資期間（年）</label>
+                        <input type="number" id="investmentYears" value="10" placeholder="例: 10">
+                    </div>
+                    <div class="filter-group">
+                        <label>追加投資額（年間・円）</label>
+                        <input type="number" id="annualContribution" value="0" placeholder="例: 120000">
+                    </div>
+                </div>
+                <button class="apply-button" onclick="simulateDividend()">シミュレーション実行</button>
+            </div>
+
+            <div id="dividendResults">
+                <div class="info-box">
+                    💡 銘柄と投資条件を設定してシミュレーションを実行してください。
+                    配当再投資による複利効果が可視化されます。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLastUpdate();
+        });
+
+        function updateLastUpdate() {
+            const now = new Date();
+            const formatted = now.toLocaleString('ja-JP', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('lastUpdate').textContent = `最終更新: ${formatted}`;
+        }
+
+        function showModules() {
+            document.getElementById('modulesView').style.display = 'block';
+            document.getElementById('screeningModule').classList.remove('active');
+            document.getElementById('trendsModule').classList.remove('active');
+            document.getElementById('dividendModule').classList.remove('active');
+        }
+
+        function showModule(moduleName) {
+            document.getElementById('modulesView').style.display = 'none';
+            if (moduleName === 'screening') {
+                document.getElementById('screeningModule').classList.add('active');
+            } else if (moduleName === 'trends') {
+                document.getElementById('trendsModule').classList.add('active');
+            } else if (moduleName === 'dividend') {
+                document.getElementById('dividendModule').classList.add('active');
+            }
+        }
+
+        function runScreening() {
+            const resultsDiv = document.getElementById('screeningResults');
+            resultsDiv.innerHTML = '<div class="loading">スクリーニング実行中...</div>';
+
+            // デモデータ生成
+            setTimeout(() => {
+                const market = document.getElementById('marketSelect').value;
+                const demoData = generateDemoScreeningData(market);
+                
+                let html = `
+                    <h3 style="margin-top: 20px;">検索結果: ${demoData.length}銘柄</h3>
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>銘柄</th>
+                                <th>市場</th>
+                                <th>時価総額</th>
+                                <th>株価</th>
+                                <th>PER</th>
+                                <th>PBR</th>
+                                <th>ROE(%)</th>
+                                <th>配当利回り(%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                demoData.forEach(stock => {
+                    html += `
+                        <tr>
+                            <td><strong>${stock.name}</strong><br><small>${stock.ticker}</small></td>
+                            <td>${stock.market}</td>
+                            <td>${stock.marketCap}</td>
+                            <td>${stock.price}</td>
+                            <td>${stock.per}</td>
+                            <td>${stock.pbr}</td>
+                            <td class="positive">${stock.roe}</td>
+                            <td class="positive">${stock.divYield}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                    <div class="info-box" style="margin-top: 20px;">
+                        📊 これはデモデータです。実際のリアルタイムデータを取得するには、
+                        金融APIサービス（Yahoo Finance API、Alpha Vantage、楽天証券API等）との連携が必要です。
+                    </div>
+                `;
+
+                resultsDiv.innerHTML = html;
+            }, 1000);
+        }
+
+        function generateDemoScreeningData(market) {
+            const japanStocks = [
+                {name: 'トヨタ自動車', ticker: '7203', market: '日本', marketCap: '45兆円', price: '¥2,850', per: 9.2, pbr: 1.1, roe: 12.5, divYield: 2.8},
+                {name: '三菱UFJ', ticker: '8306', market: '日本', marketCap: '14兆円', price: '¥1,120', per: 8.5, pbr: 0.7, roe: 8.2, divYield: 3.5},
+                {name: 'KDDI', ticker: '9433', market: '日本', marketCap: '9兆円', price: '¥4,250', per: 12.1, pbr: 1.4, roe: 11.6, divYield: 3.2},
+                {name: '伊藤忠商事', ticker: '8001', market: '日本', marketCap: '8兆円', price: '¥5,890', per: 10.8, pbr: 1.3, roe: 12.0, divYield: 2.9},
+                {name: '日本製鉄', ticker: '5401', market: '日本', marketCap: '5兆円', price: '¥3,120', per: 7.8, pbr: 0.6, roe: 7.8, divYield: 4.1}
+            ];
+
+            const usStocks = [
+                {name: 'Coca-Cola', ticker: 'KO', market: '米国', marketCap: '$265B', price: '$61.50', per: 24.5, pbr: 10.2, roe: 41.8, divYield: 3.0},
+                {name: 'Procter & Gamble', ticker: 'PG', market: '米国', marketCap: '$385B', price: '$158.20', per: 26.1, pbr: 7.8, roe: 29.9, divYield: 2.4},
+                {name: 'Johnson & Johnson', ticker: 'JNJ', market: '米国', marketCap: '$380B', price: '$156.80', per: 15.2, pbr: 5.4, roe: 35.5, divYield: 3.1},
+                {name: 'Pfizer', ticker: 'PFE', market: '米国', marketCap: '$160B', price: '$28.50', per: 9.5, pbr: 1.4, roe: 14.7, divYield: 6.2},
+                {name: 'AT&T', ticker: 'T', market: '米国', marketCap: '$145B', price: '$20.30', per: 8.2, pbr: 1.1, roe: 13.4, divYield: 5.9}
+            ];
+
+            if (market === 'japan') return japanStocks;
+            if (market === 'us') return usStocks;
+            return [...japanStocks, ...usStocks];
+        }
+
+        function analyzeTrends() {
+            const ticker = document.getElementById('tickerInput').value.trim();
+            if (!ticker) {
+                alert('ティッカーシンボルまたは証券コードを入力してください。');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('trendsResults');
+            resultsDiv.innerHTML = '<div class="loading">データ分析中...</div>';
+
+            setTimeout(() => {
+                let html = `
+                    <h3>銘柄: ${ticker}</h3>
+                    <div class="info-box">
+                        📈 <strong>${ticker}</strong> の過去10年間のトレンド分析
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h4>売上高推移（億円）</h4>
+                        <div style="height: 250px; background: white; display: flex; align-items: flex-end; justify-content: space-around; padding: 20px;">
+                            ${generateBarChart([850, 920, 980, 1050, 1120, 1200, 1280, 1350, 1420, 1500])}
+                        </div>
+                        <p style="text-align: center; margin-top: 10px; color: #666;">2015 - 2024年</p>
+                    </div>
+
+                    <div class="chart-container">
+                        <h4>営業利益率推移（%）</h4>
+                        <div style="height: 250px; background: white; display: flex; align-items: flex-end; justify-content: space-around; padding: 20px;">
+                            ${generateBarChart([8.2, 8.5, 9.1, 9.8, 10.2, 10.8, 11.2, 11.5, 11.8, 12.1])}
+                        </div>
+                        <p style="text-align: center; margin-top: 10px; color: #666;">2015 - 2024年</p>
+                    </div>
+
+                    <div class="chart-container">
+                        <h4>ROE推移（%）</h4>
+                        <div style="height: 250px; background: white; display: flex; align-items: flex-end; justify-content: space-around; padding: 20px;">
+                            ${generateBarChart([9.5, 10.2, 10.8, 11.5, 12.1, 12.8, 13.2, 13.5, 13.8, 14.2])}
+                        </div>
+                        <p style="text-align: center; margin-top: 10px; color: #666;">2015 - 2024年</p>
+                    </div>
+
+                    <table class="results-table" style="margin-top: 30px;">
+                        <thead>
+                            <tr>
+                                <th>指標</th>
+                                <th>10年前</th>
+                                <th>5年前</th>
+                                <th>現在</th>
+                                <th>成長率（年平均）</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>売上高</td>
+                                <td>850億円</td>
+                                <td>1,120億円</td>
+                                <td>1,500億円</td>
+                                <td class="positive">+5.8%</td>
+                            </tr>
+                            <tr>
+                                <td>営業利益率</td>
+                                <td>8.2%</td>
+                                <td>10.2%</td>
+                                <td>12.1%</td>
+                                <td class="positive">+3.9%</td>
+                            </tr>
+                            <tr>
+                                <td>ROE</td>
+                                <td>9.5%</td>
+                                <td>12.1%</td>
+                                <td>14.2%</td>
+                                <td class="positive">+4.1%</td>
+                            </tr>
+                            <tr>
+                                <td>配当金</td>
+                                <td>¥45</td>
+                                <td>¥68</td>
+                                <td>¥92</td>
+                                <td class="positive">+7.4%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="info-box" style="margin-top: 20px;">
+                        ✅ <strong>分析サマリー:</strong> この企業は過去10年間で安定した成長を続けており、
+                        売上・利益率・ROEの全てが右肩上がりで推移しています。配当も継続的に増配しており、
+                        長期保有に適した銘柄と言えます。
+                    </div>
+                    
+                    <div class="info-box" style="margin-top: 10px;">
+                        📊 これはデモデータです。実際のデータを取得するには金融APIとの連携が必要です。
+                    </div>
+                `;
+
+                resultsDiv.innerHTML = html;
+            }, 1000);
+        }
+
+        function generateBarChart(data) {
+            const max = Math.max(...data);
+            return data.map(value => {
+                const height = (value / max) * 100;
+                return `<div style="flex: 1; background: linear-gradient(to top, #667eea, #764ba2); 
+                        height: ${height}%; border-radius: 5px 5px 0 0; margin: 0 2px; 
+                        display: flex; align-items: flex-start; justify-content: center; padding-top: 5px;">
+                        <span style="color: white; font-size: 0.8em; font-weight: bold;">${value}</span>
+                        </div>`;
+            }).join('');
+        }
+
+        function simulateDividend() {
+            const ticker = document.getElementById('divTickerInput').value.trim();
+            const initial = parseFloat(document.getElementById('initialInvestment').value);
+            const years = parseInt(document.getElementById('investmentYears').value);
+            const annual = parseFloat(document.getElementById('annualContribution').value);
+
+            if (!ticker || !initial || !years) {
+                alert('全ての項目を入力してください。');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('dividendResults');
+            resultsDiv.innerHTML = '<div class="loading">シミュレーション実行中...</div>';
+
+            setTimeout(() => {
+                // 簡易シミュレーション計算
+                const avgReturn = 0.07; // 年間7%のリターンを想定
+                const divYield = 0.03; // 配当利回り3%を想定
+                
+                let withoutReinvest = initial;
+                let withReinvest = initial;
+                const yearlyData = [];
+
+                for (let i = 1; i <= years; i++) {
+                    // 再投資なし
+                    withoutReinvest = withoutReinvest * (1 + (avgReturn - divYield)) + annual;
+                    
+                    // 再投資あり
+                    withReinvest = withReinvest * (1 + avgReturn) + annual;
+                    
+                    yearlyData.push({
+                        year: i,
+                        withoutReinvest: Math.round(withoutReinvest),
+                        withReinvest: Math.round(withReinvest)
+                    });
+                }
+
+                const finalWithout = yearlyData[years - 1].withoutReinvest;
+                const finalWith = yearlyData[years - 1].withReinvest;
+                const difference = finalWith - finalWithout;
+                const totalInvested = initial + (annual * years);
+
+                let html = `
+                    <h3>銘柄: ${ticker} - ${years}年間のシミュレーション結果</h3>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 10px; color: white;">
+                            <div style="font-size: 0.9em; opacity: 0.9;">初期投資額</div>
+                            <div style="font-size: 2em; font-weight: bold; margin-top: 10px;">¥${initial.toLocaleString()}</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 25px; border-radius: 10px; color: white;">
+                            <div style="font-size: 0.9em; opacity: 0.9;">配当再投資なし</div>
+                            <div style="font-size: 2em; font-weight: bold; margin-top: 10px;">¥${finalWithout.toLocaleString()}</div>
+                            <div style="font-size: 0.85em; margin-top: 5px;">+${((finalWithout / totalInvested - 1) * 100).toFixed(1)}%</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 25px; border-radius: 10px; color: white;">
+                            <div style="font-size: 0.9em; opacity: 0.9;">配当再投資あり</div>
+                            <div style="font-size: 2em; font-weight: bold; margin-top: 10px;">¥${finalWith.toLocaleString()}</div>
+                            <div style="font-size: 0.85em; margin-top: 5px;">+${((finalWith / totalInvested - 1) * 100).toFixed(1)}%</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 25px; border-radius: 10px; color: white;">
+                            <div style="font-size: 0.9em; opacity: 0.9;">複利効果による差額</div>
+                            <div style="font-size: 2em; font-weight: bold; margin-top: 10px;">¥${difference.toLocaleString()}</div>
+                            <div style="font-size: 0.85em; margin-top: 5px;">再投資の優位性</div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <h4>資産推移比較</h4>
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th>年</th>
+                                    <th>配当再投資なし</th>
+                                    <th>配当再投資あり</th>
+                                    <th>差額</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                yearlyData.forEach(data => {
+                    const diff = data.withReinvest - data.withoutReinvest;
+                    html += `
+                        <tr>
+                            <td>${data.year}年目</td>
+                            <td>¥${data.withoutReinvest.toLocaleString()}</td>
+                            <td>¥${data.withReinvest.toLocaleString()}</td>
+                            <td class="positive">+¥${diff.toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="info-box" style="margin-top: 20px;">
+                        💡 <strong>複利の威力:</strong> ${years}年間で配当を再投資した場合、
+                        再投資しない場合と比べて<strong>¥${difference.toLocaleString()}</strong>多く資産が増えます。
+                        これが長期投資における複利効果です。
+                    </div>
+
+                    <div class="info-box" style="margin-top: 10px;">
+                        ⚠️ このシミュレーションは年率7%のリターン（株価上昇4% + 配当3%）を想定した試算です。
+                        実際の投資では市場変動により結果が異なります。
+                    </div>
+                `;
+
+                resultsDiv.innerHTML = html;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
